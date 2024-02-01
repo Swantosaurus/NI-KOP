@@ -1,0 +1,742 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome file</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__html">
+    <h1 id="václav-kobera-koberva1---bikop---homework-1">Václav Kobera (koberva1) - BI:KOP - Homework 2</h1>
+    <h2 id="introduction-úkol">Introduction (úkol)</h2>
+    <p><strong>Dáno:</strong> vektor proměnných (x<sub>1</sub>​…xn​), x<sub>i</sub>​ ∈ {0,1}, dále Booleova formule
+      těchto proměnných v konjunktivní normální formě o <em>m</em> klauzulích (součtových termech), dále pak pro každou
+      klauzuli <em>c</em> váha <em>w</em>(<em>c</em>).</p>
+    <p><strong>Sestrojit:</strong> ohodnocení Y proměnných X takové, že součet vah splněných klauzulí je maximální.</p>
+    <p>Problém řešte některou z pokročilých heuristik:</p>
+    <ul>
+      <li><a href="https://en.wikipedia.org/wiki/Simulated_annealing">simulované ochlazování </a></li>
+      <li><a href="https://en.wikipedia.org/wiki/Genetic_algorithm">genetický algoritmus </a></li>
+    </ul>
+    <h2 id="postup">Postup</h2>
+    <p>pro tuto úlohu byla zvolena heuristika založená na simulovaném ochlazování.</p>
+    <ul>
+      <li>White Box<br></li>
+      <li> Iniciální nastavení</li>
+      <li> Úprava heuristické hodnoty</li>
+      <li> Optimalizace koeficientu chlazení a růstu exponentu</li>
+      <li> Výsledné nastavemí</li>
+      <li>Black Box</li>
+    </ul>
+    <div style="page-break-after: always;"></div>
+    <h2 id="white-box">White Box</h2>
+    <h3 id="krok-1-iniciální-nastavení">Krok 1 (Iniciální nastavení)</h3>
+    <p>pseudokód simulovaného ochlazování</p>
+    <pre class=" language-javascript"><code class="prism  language-javascript"><span class="token keyword">var</span>  s  <span class="token operator">=</span>  <span class="token function">randomState</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token keyword">var</span> bestState <span class="token operator">=</span> s
+<span class="token keyword">while</span><span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">isFrozen</span><span class="token punctuation">(</span>T<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">equilibrium</span> <span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	    s_new  ← <span class="token function">neighbour</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span> <span class="token comment">//Pick a random neighbour</span>
+	    <span class="token function">If</span> <span class="token punctuation">(</span>s_new<span class="token punctuation">.</span><span class="token function">isBetterThan</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span> or <span class="token function">P</span><span class="token punctuation">(</span>s_new<span class="token punctuation">,</span> s<span class="token punctuation">,</span> T<span class="token punctuation">)</span> ≥ <span class="token function">random</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">:</span> <span class="token comment">// P is probability of accepting worse state</span>
+	        s  ← s_new
+	    <span class="token function">If</span> <span class="token punctuation">(</span>s<span class="token punctuation">.</span><span class="token function">isBetterThan</span><span class="token punctuation">(</span>bestState<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+		    bestState <span class="token operator">=</span> s
+    <span class="token punctuation">}</span>
+    T  ← <span class="token function">coolDown</span><span class="token punctuation">(</span>T<span class="token punctuation">)</span>
+<span class="token keyword">return</span> bestState
+</code></pre>
+    <p>prvotní nastavení</p>
+    <ul>
+      <li><strong>počáteční stav</strong> - náhodný (náhodně ohodnoceny jednotlivé proměnné)</li>
+      <li><strong>počáteční teplota</strong> - součet normalizovaných vah – <strong>všechny váhy byly namapovány do
+          intervalu (0, 100)</strong></li>
+      <li><strong>isFrozen()</strong> - pokud je teplota nižší než 1</li>
+      <li><strong>quilibrium()</strong> - je konstanta 30 (30 inner cycles)</li>
+      <li><strong>A.isBetterThan(B)</strong> a <strong>P()</strong> pracují s heuristickou hodnotou zvolenou na základě
+        následujícího vzorečku:</li>
+    </ul>
+    <pre><code>heuristicValue = sumOfActiveWeights  * (sumOfSuccessClausules / AllClausules)
+
+A.isBetterThan(B) vrátí true pokud A má vyžší heuristickou hodnotu než B
+</code></pre>
+    <p>pro <strong>P()</strong> byla zvolena funkce exp(- δ/T)) kde δ je rozdíl heuristických hodnot (viz <a
+        href="https://courses.fit.cvut.cz/NI-KOP/lectures/index.html">https://courses.fit.cvut.cz/NI-KOP/lectures/index.html</a>
+      přednáška 8)</p>
+    <ul>
+      <li><strong>coolDown()</strong> - aktuální teplota vynásobena koeficientem 0.95</li>
+      <li><strong>neighbour(s)</strong> - prohodí hodnotu jedné (náhodné ) proměnné v aktulním stavu</li>
+    </ul>
+    <div style="page-break-after: always;"></div>
+
+    <h3 id="testování-kroku-1">Testování kroku 1</h3>
+    <p>Testování proběhlo na instanci wuf20-71-M/20-71-01.mwcnf</p>
+    <p>Toto naivní nastavení ovšam na první pohled nebylo moc kvalitní, jelikož preferovalo hodnocení kde byly všechny
+      proměnné nastaveny na true a násobící zlomek nepřevážil jednotlivé hodnoty vah.</p>
+    <ul>
+    </ul>
+    <table>
+      <thead>
+        <tr>
+          <th>avrg. runs</th>
+          <th>satisfied</th>
+          <th>satisfiedWithOptimum</th>
+          <th>avrg. heuristic value</th>
+          <th>avrg. satisfied clausules</th>
+          <th>selected variables</th>
+        </tr>
+      </thead>
+      <tr>
+        <td>1590</td>
+        <td>0/1000</td>
+        <td>0/1000</td>
+        <td>1015</td>
+        <td>64.0</td>
+        <td>20.0</td>
+      </tr>
+      <tbody>
+      </tbody>
+    </table>
+
+    <li>heuristika nepenalizovala nesplněné klauzule dostatečně<br>
+
+      <p>Průběh heurické hodnoty a pravděpodobnosit přijmout zhoršující stav vypadají poměrně dobře</p>
+
+      <img src="./resources/krok1_heuristic_value.png">
+
+      <img src="./resources/krok1_p_value.png">
+
+      <div style="page-break-after: always;"></div>
+      <h2 id="krok-2---úprava-heuristické-hodnoty">Krok 2 (Úprava heuristické hodnoty)</h2>
+      <ol>
+        <li>(sumOfSuccessClausules / AllClausules) je vždy v rozmezí 0 do 1 závostlost je ovšem lineární na tomto
+          intervalu podle počtu splněných klauzulí. Toto lze změnit umocněním tooto zlomku na exponent &gt; 1</li>
+      </ol>
+      <pre class="prism  language-javascript"><code>heuristicValue = sumOfActiveWeights * (sumOfSuccessClausules / AllClausules) ^ E
+</code></pre>
+      <p>sumOfSuccessClausules / AllClausules je vždy hodnota v rozsahu &lt;0, 1&gt; proto je možné volit E i pro
+        hodnoty s desetinou čárkou (např 2.23)</p>
+      <p>Penalizace křivkou mi přišla výhodnější pro tuto heuristickou hodnotu než skokový přechod pomocí penalizace
+        neúspěšných běhů násoběním konstantou. Tato metoda může připomínat například gama korekci. <a
+          href="https://www.cambridgeincolour.com/tutorials/gamma-correction.htm">https://www.cambridgeincolour.com/tutorials/gamma-correction.htm</a>
+      </p>
+      <p>pro exponent testueme hodnoty 2 2.5 3 3.5 4 4.5 5<br>
+        na instancích wuf20-71-M/20-71-01 až wuf20-71-M/20-71-05</p>
+      <p>počet opakování: 500<br>
+        <strong>formát dat:</strong> (satisfied) — (satisfiedWithOptimum)
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>2</th>
+            <th>2.5</th>
+            <th>3</th>
+            <th>3.5</th>
+            <th>4</th>
+            <th>4.5</th>
+            <th>5</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>20-71-01</td>
+            <td>0 — 0</td>
+            <td>500 — 500</td>
+            <td>500 — 500</td>
+            <td>500 — 490</td>
+            <td>500 — 474</td>
+            <td>500 — 450</td>
+            <td>500 — 444</td>
+          </tr>
+          <tr>
+            <td>20-71-02</td>
+            <td>500 — 500</td>
+            <td>500 — 500</td>
+            <td>500 — 500</td>
+            <td>500 — 498</td>
+            <td>500 — 495</td>
+            <td>500 — 495</td>
+            <td>500 — 476</td>
+          </tr>
+          <tr>
+            <td>20-71-03</td>
+            <td>0 — 0</td>
+            <td>500 — 500</td>
+            <td>500 — 500</td>
+            <td>500 — 490</td>
+            <td>500 — 465</td>
+            <td>500 — 436</td>
+            <td>500 — 426</td>
+          </tr>
+          <tr>
+            <td>20-71-04</td>
+            <td>0 — 0</td>
+            <td>495 — 493</td>
+            <td>496 – 494</td>
+            <td>493 – 491</td>
+            <td>500 — 491</td>
+            <td>499 — 483</td>
+            <td>500 — 473</td>
+          </tr>
+          <tr>
+            <td>20-71-05</td>
+            <td>500 — 500</td>
+            <td>500 — 500</td>
+            <td>500 — 500</td>
+            <td>500 — 500</td>
+            <td>500 — 500</td>
+            <td>500 — 500</td>
+            <td>500 — 497</td>
+          </tr>
+        </tbody>
+      </table>
+      <ul>
+        <li>z naměřených dat lze vidět že optimální exponent bude někde mezi 2.5 a 3</li>
+      </ul>
+      <p>měření hodnot exponentu 2.3 až 3.0 po 0.05 krocích s 200 opakováním na instancích wuf20-71-M/20-71-01 až
+        wuf20-71-M/20-71-050 úspěšné běhy a optimální běhy byly napířč těmito instancemi sčítány</p>
+      <p>(max 10_000)</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Exponent</th>
+            <th>satisfied</th>
+            <th>optimums</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>2.3</td>
+            <td>8877</td>
+            <td>8751</td>
+          </tr>
+          <tr>
+            <td>2.35</td>
+            <td>9077</td>
+            <td>8950</td>
+          </tr>
+          <tr>
+            <td>2.4</td>
+            <td>9061</td>
+            <td>8928</td>
+          </tr>
+          <tr>
+            <td>2.45</td>
+            <td>9072</td>
+            <td>8941</td>
+          </tr>
+          <tr>
+            <td>2.5</td>
+            <td>9064</td>
+            <td>8927</td>
+          </tr>
+          <tr>
+            <td>2.55</td>
+            <td>9069</td>
+            <td>8907</td>
+          </tr>
+          <tr>
+            <td>2.6</td>
+            <td>9085</td>
+            <td>8916</td>
+          </tr>
+          <tr>
+            <td>2.65</td>
+            <td>9265</td>
+            <td>9090</td>
+          </tr>
+          <tr>
+            <td>2.7</td>
+            <td>9272</td>
+            <td>9081</td>
+          </tr>
+          <tr>
+            <td>2.75</td>
+            <td>9283</td>
+            <td>9095</td>
+          </tr>
+          <tr>
+            <td>2.8</td>
+            <td>9504</td>
+            <td>9276</td>
+          </tr>
+          <tr>
+            <td>2.85</td>
+            <td>9522</td>
+            <td>9299</td>
+          </tr>
+          <tr>
+            <td>2.9</td>
+            <td>9515</td>
+            <td>9301</td>
+          </tr>
+          <tr>
+            <td>2.95</td>
+            <td>9521</td>
+            <td>9292</td>
+          </tr>
+          <tr>
+            <td>3.0</td>
+            <td>9515</td>
+            <td>9260</td>
+          </tr>
+        </tbody>
+      </table>
+      <ul>
+        <li>zde je vidět že optimum exponentu je přibližně okolo 2.9</li>
+        <li>tento exponent udává poměr kvality zda je formule splněna a ohodnocení váhami.</li>
+      </ul>
+      <p>Toto nastavení dobře fungovalo pro všechny instance 21-71-M/N tedy lehčí z pohledu sat tak bez zavádějcích vah,
+        ale pro data 21-91 a pro 21-71-Q/R to většinou neskončilo ve stevu který měl všechny klauzule soplněné.</p>
+      <p>Exerimentama s exponentem nad jednotivými instancemi bylo zjištěno že každá instance má svůj “sweet spot” pro
+        hodnotu exponentu. Tato hodnota ovšem je pro každou instanci různá.</p>
+
+    <li>20.71-Q-05 (E = 2.9)</li>
+
+    </li>
+    <table>
+      <thead>
+        <tr>
+          <th>E</th>
+          <th>avrg. runs</th>
+          <th>satisfied</th>
+          <th>satisfiedWithOptimum</th>
+          <th>avrg. heuristic value</th>
+          <th>avrg. satisfied clausules</th>
+          <th>selected variables</th>
+        </tr>
+      </thead>
+      <tr>
+        <td>3</td>
+        <td>3300</td>
+        <td>0/1000</td>
+        <td>0/1000</td>
+        <td>751.37</td>
+        <td>64.0</td>
+        <td>17.0</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>3300</td>
+        <td>0/1000</td>
+        <td>0/1000</td>
+        <td>719.58</td>
+        <td>66.4</td>
+        <td>15.52</td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td>3300</td>
+        <td>332/1000</td>
+        <td>314/1000</td>
+        <td>673.11</td>
+        <td>67.52</td>
+        <td>15.01</td>
+      </tr>
+      <tr>
+        <td>15</td>
+        <td>3300</td>
+        <td>895/1000</td>
+        <td>646/1000</td>
+        <td>642.71</td>
+        <td>68.83</td>
+        <td>14.69</td>
+      </tr>
+      <tr>
+        <td>20</td>
+        <td>3300</td>
+        <td>987/1000</td>
+        <td>590/1000</td>
+        <td>623.91</td>
+        <td>68.89</td>
+        <td>14.48</td>
+      </tr>
+      <tr>
+        <td>25</td>
+        <td>3300</td>
+        <td>999/1000</td>
+        <td>506/1000</td>
+        <td>610.65</td>
+        <td>69.22</td>
+        <td>14.32</td>
+      </tr>
+
+      <tbody>
+      </tbody>
+    </table>
+
+    <img src="./resources/krok2_heurustic_value_71Q.png">
+
+
+    <p><b>P1E:</b> Přesná hodnota exponentu se nasavuje přímo při běhu algoritmu vždy když se zjistí že soused má
+      všechny klauzuje splněné a zároveň má nižší hodnotu heuristické hodntoy tak se hodnota E vynásobí koeficientem 1.1
+      (při změně exponentu se teplota vrátí na původní jelikož všechny heuristické hodnoty v prvním běhu budou jiné)</p>
+    <p><b>P2E:</b> A pokdu algoritmus skončí a výsledný stav neobsahuje všechny clauzule beh se opakuje s expojnentem
+      zvětšeným an dvojnásobek.</p>
+
+
+
+    <table>
+      <thead>
+        <tr>
+          <th>E</th>
+          <th>avrg. runs</th>
+          <th>satisfied</th>
+          <th>satisfiedWithOptimum</th>
+          <th>avrg. heuristic value</th>
+          <th>avrg. satisfied clausules</th>
+          <th>selected variables</th>
+        </tr>
+      </thead>
+      <tr>
+        <td>Adaptive</td>
+        <td>13006</td>
+        <td>1000/1000</td>
+        <td>575/1000</td>
+        <td>751.37</td>
+        <td>64.0</td>
+        <td>17.0</td>
+      </tr>
+    </table>
+
+    <p></p>
+    <p></p>
+    <li>Histogram dosažených hodnot E pro instanci 21-71-Q-05</li>
+
+    <img src="./resources/krok2_E_distribution.png">
+
+    <li>Ukázka resetu heuristiky při nalezení konfliktu</li>
+    <img src="./resources/krok2_heuristic_value_with_resets.png">
+    <img src="./resources/krok2_p_with_reset.png">
+
+
+    <p>testování nad různými instancemi</p>
+    <li>20-71-M (všechny instance každá 100 běhů)</li>
+    <ul>
+      <li>Pravděpodobnost nalezení splněné formule: 100%</li>
+    </ul>
+    <ul>
+      <li>Pravděpodobnost nalezení optima: 97.14%</li>
+    </ul>
+    <li>20-71-N (všechny instance každá 100 běhů)</li>
+    <ul>
+      <li>Pravděpodobnost nalezení splněné formule: 100%</li>
+    </ul>
+    <ul>
+      <li>Pravděpodobnost nalezení optima: 97.5%</li>
+    </ul>
+    <li>20-71-Q (všechny instance každá 100 běhů)</li>
+    <ul>
+      <li>Pravděpodobnost nalezení splněné formule: 100%</li>
+    </ul>
+    <ul>
+      <li>Pravděpodobnost nalezení optima: 58.95%</li>
+    </ul>
+
+    <p>pro lehčí instance M, N aktuální nastavení fungovalo celkem dobře ale pro instance Q, R hodnota <b>E</b> čast
+      byla příliš vysoká</p>
+
+    <p>ukázalo se že odstranění podmínky pro zvyšování exponentu při nalezení konfliktu P1E a úprava P2E na nižší
+      hodnotu fungovalo lépe</p>
+
+    P2E = 1.2, ochlazování = 0.95
+
+    <li>20-71-Q </li>
+    <ul>
+      <li>Pravděpodobnost nalezení splněné formule: 100%</li>
+    </ul>
+    <ul>
+      <li>Pravděpodobnost nalezení optima: 83.6%</li>
+    </ul>
+    <li>20-91-M</li>
+    <ul>
+      <li>Pravděpodobnost nalezení splněné formule: 100%</li>
+    </ul>
+    <ul>
+      <li>Pravděpodobnost nalezení optima: 99.11%</li>
+    </ul>
+    <li>20-91-N</li>
+    <ul>
+      <li>Pravděpodobnost nalezení splněné formule: 100%</li>
+    </ul>
+    <ul>
+      <li>Pravděpodobnost nalezení optima: 98.9%</li>
+    </ul>
+    <ul>
+      <li>avrg. Steps: 8035.96</li>
+    </ul>
+    <li>20-91-Q</li>
+    <ul>
+      <li>Pravděpodobnost nalezení splněné formule: 81%</li>
+    </ul>
+    <ul>
+      <li>Pravděpodobnost nalezení optima: 53.97%</li>
+    </ul>
+
+    <div style="page-break-after: always;"></div>
+    <h2>Krok3 (Optimalizace koeficientu chlazení a růstu exponentu)</h2>
+
+    <p><b>koeficient chlatzení budeme ozančovat C </b> </p>
+
+    Faktorový návrh byl testován na instanci 20-71-Q prvních 100 instancí každá 40 opakování (celkem 4000 pro jedno na
+    nastavení)
+
+    <li>data jsou ve formátu: <b>úspěšnost (relativní_chyba) / počet_kroků</b></li>
+    <table>
+      <tr>
+        <th>P2E\C</th>
+        <th>0.90</th>
+        <th>0.92</th>
+        <th>0.95</th>
+        <th>0.97</th>
+        <th>0.98</th>
+        <th>0.99</th>
+      </tr>
+      <tr>
+        <tH>1.1</tH>
+        <td>74.80% <br>( 0.011) <br> 20521.43</td>
+        <td>77.93% <br>( 0.008) <br> 26059.52</td>
+        <td>83.23% <br>( 0.006) <br> 42571.0</td>
+        <td>90.18% <br>( 0.003) <br> 72421.26</td>
+        <td>93.68% <br>( 0.002) <br> 110134.16</td>
+        <td>97.28% <br>(>0.001) <br> 223040.31</td>
+      </tr>
+      <tr>
+        <tH>1.2</tH>
+        <td>72.60% <br>( 0.013) <br> </td>
+        <td>76.45% <br>( 0.010) <br> 15440.91</td>
+        <td>83.58% <br>( 0.006) <br> 25082.85</td>
+        <td>88.93% <br>( 0.004) <br> 42398.12</td>
+        <td>92.68% <br>( 0.003) <br> 63996.81</td>
+        <td>96.85% <br>(>0.001) <br> 129073.65</td>
+      </tr>
+      <tr>
+        <tH>1.3</tH>
+        <td>70.18% <br>( 0.015) <br> 9386.57</td>
+        <td>74.48% <br>( 0.012) <br> 11854.32</td>
+        <td>80.90% <br>( 0.007) <br> 19248.33</td>
+        <td>88.08% <br>( 0.004) <br> 32339.52</td>
+        <td>90.90% <br>( 0.003) <br> 48902.14</td>
+        <td>96.15% <br>( 0.001) <br> 98382.50</td>
+      </tr>
+      <tr>
+        <tH>1.4</tH>
+        <td>69.70% <br>( 0.016) <br> 7880.79</td>
+        <td>72.55 <br>( 0.013) <br> 9880.70</td>
+        <td>80.90% <br>( 0.008) <br> 15987.06</td>
+        <td>87.23% <br>( 0.005) <br> 26785.18</td>
+        <td>91.92% <br>( 0.003) <br> 35982.83</td>
+        <td>96.20% <br>( 0.001) <br> 81075.17</td>
+      </tr>
+      <tr>
+        <tH>1.5</tH>
+        <td>65.23% <br>( 0.018) <br> 6993.70</td>
+        <td>70.95% <br>( 0.015) <br> 8786.83</td>
+        <td>77.35% <br>( 0.010) <br> 14195.96</td>
+        <td>85.73% <br>( 0.005) <br> 23779.27</td>
+        <td>89.80% <br>( 0.004) <br> 35982.83</td>
+        <td>95.10% <br>( 0.002) <br> 72519.05</td>
+      </tr>
+      <tr>
+        <tH>2.0</tH>
+        <td>62.48% <br>( 0.024) <br> 5192.70</td>
+        <td>66.07% <br>( 0.019) <br> 6498.74</td>
+        <td>75.07% <br>( 0.012) <br> 10471.89</td>
+        <td>82.13% <br>( 0.007) <br> 17523.37</td>
+        <td>88.68% <br>( 0.004) <br> 26366.63</td>
+        <td>94.30% <br>( 0.002) <br> 52805.71</td>
+      </tr>
+    </table>
+
+    <li>Zvoleno bylo P2E = 1.4 a C = 98 - úspěšnos 91% s 0.3% reativní chybou a průměrným počtek kroků ~36000</li>
+
+    <div style="page-break-after: always;"></div>
+    <h2>Finální úprava</h2>
+
+    
+
+    <li><b>Počáteční stav:</b> náhodný (náhodně ohodnoceny jednotlivé proměnné)</li>
+    <li><strong>Počáteční teplota:</strong> součet normalizovaných vah  <strong>všechny váhy byly namapovány do
+      intervalu (0, 100)</strong></li>
+    <li><strong>isFrozen()</strong> - pokud je teplota nižší než 1</li>
+    <li><strong>quilibrium()</strong> - je konstanta 30 (30 inner cycles)</li>
+    <li><strong>A.isBetterThan(B)</strong> a <strong>P()</strong> pracují s heuristickou hodnotou zvolenou na základě
+      následujícího vzorečku: (optimalizováno v kroku 2 a 3[hodnota E])</li>
+
+
+      <p>Při testování se našla ještě chyba když E bylo neustále snižování u těžkých instancí s 50 a více proměnnými pak hodnota heuristiky se
+        tratila v Float64 a neříkala prakticky nic než splněno a nesplněno a algoritmus se zacyklil, toto jsem nakonec
+        upravil tak aby při E vštším než 10^5 se použije jiná heuristická hodnota:</p>
+
+    <pre class=" language-javascript">
+      <code class="prism  language-javascript">heuristicValue = 
+          <span class="token keyword">if</span>(E < 10^5) sumOfActiveWeights * (sumOfSuccessClausules / AllClausules) ^ E
+          <span class="token keyword">else if</span>(satisfied) sumOfActiveWeights + sumOfAllWeights 
+          <span class="token keyword">else</span> sumOfActiveWeights</code></pre>
+
+      <li><strong>coolDown()</strong> - aktuální teplota vynásobena koeficientem 0.98 (zvoleno v kroku 3)</li> 
+      <li><strong>neighbour(s)</strong> - prohodí hodnotu jedné (náhodné ) proměnné v aktulním stavu</li>
+      
+      <li>Program se opakuje pokud skončí ve stavu který nemá splněny všechny clauzule hodnota E je rozšířena o 1.4 násobek (Krok 3)</li>
+
+      <li>Finální průběh heuristiky nad 50-218-M-01</li>
+      <img src="./resources/heuristic_value_over_50_218.png">
+      <img src="./resources/p_value_50_218.png">
+
+    <div style="page-break-after: always;"></div>
+
+    <h2>Black Box Testing</h2>
+
+    <p>V rámci blackbox fáze bylo hlavěn bráno důraz na výstupy z algoritmu (poměr splněných k nesplněným v procentech (Satisfied), správnost nalezeného optima v %,  a relativní vzdálenost nalezeného optima od škutečného optima) a průměrný počtet kroků k dosažení výsledku</p>
+    <p>Počet kroků se mi zdál vhodnější než čas běhu jelikož je platformně a programově nezávislý</p>
+    <p>Všechny instance opakovány 100x pro MN a 10x každou pro QR instanci</p>
+
+    <table>
+      <tr>
+        <th>instance</th>
+        <th>satisfied</th>
+        <th>satisfied optimum</th>
+        <th>relative error</th>
+        <th>avrg. Iterations</th>
+      </tr>
+      <tr>
+        <th>20-71M</th>
+        <th>100%</th>
+        <th>99.98%</th>
+        <th>8.78*10^(-8)</th>
+        <th>10205.61</th>
+      </tr>
+      <tr>
+        <th>20-71N</th>
+        <th>100%</th>
+        <th>99.90%</th>
+        <th>9.62*10^(-7)</th>
+        <th>10212.45</th>
+      </tr>
+      <tr>
+        <th>20-71Q</th>
+        <th>100%</th>
+        <th>91.36%</th>
+        <th>2.65 * 10^(-4)</th>
+        <th>40943.92</th>
+      </tr>
+      <tr>
+        <th>20-91M</th>
+        <th>99.99%</th>
+        <th>90.45%</th>
+        <th>1.20 * 10^(-4)</th>
+        <th>15731.88</th>
+      </tr>
+      <tr>
+        <th>20-91R</th>
+        <th>94.8%</th>
+        <th>68.4%</th>
+        <th>0.15</th>
+        <th>165976.74</th>
+      </tr>
+      <tr>
+        <th>20-91Q</th>
+        <th>93.8%</th>
+        <th>66.2%</th>
+        <th>0.16</th>
+        <th>166582.35</th>
+      </tr>
+      <tr>
+        <th>36-122M</th>
+        <th>100%</th>
+        <th>?</th>
+        <th>?</th>
+        <th>11454.72</th>
+      </tr>
+      <tr>
+        <th>36-122N</th>
+        <th>100%</th>
+        <th>?</th>
+        <th>?</th>
+        <th>11440.07</th>
+      </tr>
+      <tr>
+        <th>36-157M</th>
+        <th>99.95%</th>
+        <th>97.13%</th>
+        <th>9.04 * 10^(-4)</th>
+        <th>21880.797</th>
+      </tr>
+      <tr>
+        <th>36-157N</th>
+        <th>99.91%</th>
+        <th>97.03%</th>
+        <th>8.49 * 10^(-4)</th>
+        <th>21880.797</th>
+      </tr>
+      <tr>
+        <th>36-157Q</th>
+        <th>62.60%</th>
+        <th>12.9%</th>
+        <th>0.22</th>
+        <th>271214.46</th>
+      </tr>
+      <tr>
+        <th>50-218M</th>
+        <th>99.7%</th>
+        <th>96.0%</th>
+        <th>8.92*10^(-4)</th>
+        <th>24781.62</th>
+      </tr>
+      <tr>
+        <th>50-218N</th>
+        <th>99.6%</th>
+        <th>96.2%</th>
+        <th>7.46*10^(-4)</th>
+        <th>25485.24</th>
+      </tr>
+      <tr>
+        <th>75-325N</th>
+        <th>96.7%</th>
+        <th>85.9%</th>
+        <th>3.7*10^(-3)</th>
+        <th>43762.74</th>
+      </tr>
+      <tr>
+        <th>75-325N</th>
+        <th>96.39%</th>
+        <th>87.8%</th>
+        <th>2.6*10^(-3)</th>
+        <th>43004.10</th>
+      </tr>
+      
+      <!--<tr>
+        <th>36-91R</th>
+        <th>93.8%</th>
+        <th>?</th>
+        <th>?</th>
+        <th>166582.35</th>
+      </tr>-->
+
+      
+    </table>
+
+    <div style="page-break-after: always;"></div>
+    <h2>Závěr</h2>
+    Cílem bylo vytvoři heuristický algoritmus který bude řešit problém MaxSat. Tento program byl vytvořen pomocí Simulovaného ochlazování a doladěn pomocí pozorování vývoje při volbě parametrů a faktorovým návrhem.
+    Program poměrně efektivně řeší sady MN. Se sadami Q a R měl size naimplementovanou nějakou základní logioku ale na složitějších instancich nefungovala efektivně pro složitější instance kde se scházel fázový přechod s zavaádějícím řešením.
+    Pro instance s 20 proměnnými to ještě fungovalo ale více proměnných (36) to už nezvládalo vůbec přesvědšivě.
+
+
+    <div style="page-break-after: always;"></div>
+
+    <h2>Použité technologie</h2>
+    <li>Programovací jazyk algoritmu: <a href="https://kotlinlang.org/">Kotlin</a></li>
+    <li>Grafy: <a href="https://kotlinlang.org/docs/data-science-overview.html"> Notebook (Jupyter Notebook s Kotlin programovacím Jazykem) </a> a knihovny <a href="https://lets-plot.org/">lets-plot</a> a <a href="https://github.com/Kotlin/dataframe">data frame</a></li>
+    <li>IDEs: <a href="https://www.jetbrains.com/idea/">IntelliJ Idea - Kotlin</a> a <a href="https://code.visualstudio.com/">VSCode - HTML (Report)</a></li>
+    <li>Template pro reporty: https://stackedit.io/</li>
+
+  </div>
+</body>
+
+</html>
